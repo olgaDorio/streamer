@@ -1,4 +1,12 @@
+const fs = require('fs');
 const path = require('path');
+const jsdoc2md = require('jsdoc-to-markdown');
+
+jsdoc2md.render({
+  files: 'src/*.js',
+}).then((text) => {
+  fs.writeFile('README.md', text, 'utf8', () => {});
+})
 
 module.exports = {
   mode: process.env.MODE || 'production',
@@ -22,3 +30,4 @@ module.exports = {
     ],
   },
 };
+

@@ -1,6 +1,23 @@
 import { getLoadQueue, updateLoadQueue } from './mappers.js';
 import { getMediaSource, isTypeSupported, checkOptions, getArrayBuffer, getDuration } from './utils.js';
 
+/**
+ * Создает экземпляр класса Streamer.
+
+ * @namespace
+ * @property {object}           options               - Streamer options.
+
+ * @property {number}           options.chunkDuration - Duration of one chunk.
+ * @property {string}           options.mimeCodec     - mimetype and codec
+ * @property {array}            options.urls          - array of urls
+ * @property {HTMLVideoElement} options.video         - The default number of players.
+ * @property {string}           options.quality       - Default quality
+ * @property {number}           options.totalDuration - Video duration
+
+ * @property {object}  options.treasure      - The default treasure.
+ * @property {number}  options.treasure.gold - How much gold the party starts with.
+ */
+
 class Streamer {
   constructor(options) {
     if (!checkOptions(options)) {
@@ -46,9 +63,18 @@ class Streamer {
     this.getVideo(0);
   }
 
+  /**
+  * Tells streamer which quality to use
+  * @param {string} quality - quality value
+  */
+
   setQuality(quality) {
+    // TODO:
+    // validate quality
+
     this.quality = quality;
     this.loadQueue = updateLoadQueue(this.loadQueue);
+
     if (this.isFetching) {
       console.log('Streamer is busy, it will fetch next chunk when will finish the last one')
       return;
