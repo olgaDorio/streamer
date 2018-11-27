@@ -13,8 +13,6 @@
 | options.video | <code>HTMLVideoElement</code> | The default number of players. |
 | options.quality | <code>string</code> | Default quality |
 | options.totalDuration | <code>number</code> | Video duration |
-| options.treasure | <code>object</code> | The default treasure. |
-| options.treasure.gold | <code>number</code> | How much gold the party starts with. |
 
 <a name="Streamer+setQuality"></a>
 

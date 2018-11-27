@@ -2,7 +2,7 @@ import { getLoadQueue, updateLoadQueue } from './mappers.js';
 import { getMediaSource, isTypeSupported, checkOptions, getArrayBuffer, getDuration } from './utils.js';
 
 /**
- * Создает экземпляр класса Streamer.
+ * Создает экземпляр класса Streamer
 
  * @namespace
  * @property {object}           options               - Streamer options.
@@ -13,9 +13,6 @@ import { getMediaSource, isTypeSupported, checkOptions, getArrayBuffer, getDurat
  * @property {HTMLVideoElement} options.video         - The default number of players.
  * @property {string}           options.quality       - Default quality
  * @property {number}           options.totalDuration - Video duration
-
- * @property {object}  options.treasure      - The default treasure.
- * @property {number}  options.treasure.gold - How much gold the party starts with.
  */
 
 class Streamer {
@@ -112,6 +109,7 @@ class Streamer {
     // TODO: also add some `no lazy` load parameter
 
     // have some left chunks which are not requested now, but havent loaded yet
+
     const lazyIndex = this.loadQueue.findIndex(item => !item[this.quality].loaded);
     if (lazyIndex > -1) {
       this.getVideo(lazyIndex);
