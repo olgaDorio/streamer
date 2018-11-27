@@ -1,5 +1,7 @@
 import { getLoadQueue, updateLoadQueue } from './mappers.js';
-import { getMediaSource, isTypeSupported, checkOptions, getArrayBuffer, getDuration } from './utils.js';
+import {
+  getMediaSource, isTypeSupported, checkOptions, checkQuality, getArrayBuffer, getDuration,
+} from './utils.js';
 
 /**
  * Создает экземпляр класса Streamer
@@ -28,7 +30,7 @@ class Streamer {
     this.video = options.video;
     this.quality = options.quality;
     this.loadQueue = getLoadQueue(this.urls);
-    this.duration = options.totalDuration || this.loadQueue.length * this.chunkDuration
+    this.duration = options.totalDuration || this.loadQueue.length * this.chunkDuration;
 
     this.connect();
 
@@ -36,9 +38,9 @@ class Streamer {
   }
 
   connect() {
-    const mediaSource = getMediaSource();
+    const MSE = getMediaSource();
 
-    if (!mediaSource) {
+    if (!MSE) {
       console.error('MSE not supported');
       return;
     }
@@ -48,7 +50,7 @@ class Streamer {
       return;
     }
 
-    this.mediaSource = new MediaSource;
+    this.mediaSource = new MSE();
     this.video.src = URL.createObjectURL(this.mediaSource);
     this.mediaSource.addEventListener('sourceopen', this.onSourceOpen.bind(this));
   }
@@ -66,14 +68,18 @@ class Streamer {
   */
 
   setQuality(quality) {
-    // TODO:
-    // validate quality
+    const isValid = checkQuality(quality, this.loadQueue);
+
+    if (!isValid) {
+      console.error(`${quality} does not exist in ${this.loadQueue}`);
+      return;
+    }
 
     this.quality = quality;
     this.loadQueue = updateLoadQueue(this.loadQueue);
 
     if (this.isFetching) {
-      console.log('Streamer is busy, it will fetch next chunk when will finish the last one')
+      console.log('Streamer is busy, it will fetch next chunk when will finish the last one');
       return;
     }
 
@@ -81,7 +87,7 @@ class Streamer {
   }
 
   getCurrentChunk() {
-    return Math.floor(this.video.currentTime / this.chunkDuration)
+    return Math.floor(this.video.currentTime / this.chunkDuration);
   }
 
   onBufferReceive() {
@@ -102,19 +108,28 @@ class Streamer {
       return;
     }
 
-    // TODO: split it
-    // at first should load next
-    // then previous chunks
+    // TODO: move to separate function
 
-    // TODO: also add some `no lazy` load parameter
+    const notLoaded = this.loadQueue.reduce((accumulator, currentValue, index) => {
+      if (!this.isChunkLoaded(index)) {
+        const object = { ...accumulator };
+        const property = index < currIndex ? 'before' : 'after';
+        object[property] = object[property].concat(index);
+        return object;
+      }
 
-    // have some left chunks which are not requested now, but havent loaded yet
+      return accumulator;
+    }, { before: [], after: [] });
 
-    const lazyIndex = this.loadQueue.findIndex(item => !item[this.quality].loaded);
-    if (lazyIndex > -1) {
-      this.getVideo(lazyIndex);
+    if (!notLoaded.after.length && !notLoaded.before.length) {
       return;
     }
+
+    const loadNext = notLoaded.after.length
+      ? Math.min(...notLoaded.after)
+      : Math.max(...notLoaded.before);
+
+    this.getVideo(loadNext);
   }
 
   getVideo(index) {
@@ -125,18 +140,16 @@ class Streamer {
         this.isFetching = false;
         return this.updateQueue(file, index);
       })
-      .then(() => {
-        return this.onBufferReceive();
-      })
+      .then(() => this.onBufferReceive())
       .catch((e) => {
         console.log(index, e.message);
       });
-  };
+  }
 
   appendBuffer() {
     const index = this.loadQueue.findIndex((source) => {
       const currentSource = source[this.quality];
-      return currentSource.loaded && !currentSource.pushed
+      return currentSource.loaded && !currentSource.pushed;
     });
 
     if (index < 0) {
@@ -147,7 +160,7 @@ class Streamer {
     const chunk = this.loadQueue[index][this.quality];
 
     if (this.sourceBuffer && !this.sourceBuffer.updating && chunk) {
-      this.sourceBuffer.timestampOffset = index ? index * chunk.mediaDuration: index;
+      this.sourceBuffer.timestampOffset = index ? index * chunk.mediaDuration : index;
       this.sourceBuffer.appendBuffer(chunk.mediaBuffer);
       chunk.pushed = true;
     }
@@ -178,8 +191,8 @@ class Streamer {
           };
 
           resolve();
-        })
-    })
+        });
+    });
   }
 }
 
