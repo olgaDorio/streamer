@@ -5,7 +5,7 @@ const jsdoc2md = require('jsdoc-to-markdown');
 jsdoc2md.render({
   files: 'src/*.js',
 }).then((text) => {
-  fs.writeFile('README.md', text, 'utf8', () => {});
+  fs.writeFile('docs.md', text, 'utf8', () => {});
 })
 
 module.exports = {
