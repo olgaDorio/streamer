@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <script src="dist/index.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <video class="container__video" src="" controls autoplay></video>
+    <label>
+      LOW
+      <input type="radio" name="quality0" value="low" checked>
+    </label>
+    <code class="container__code"></code>
+  </div>
+
+  <div class="container">
+    <video class="container__video" src="" controls autoplay></video>
+    <label>
+      LOW
+      <input type="radio" name="quality1" value="low" checked>
+    </label>
+    <label>
+      HIGH
+      <input type="radio" name="quality1" value="high">
+    </label>
+    <code class="container__code"></code>
+  </div>
+
+  <script>
+    // https://w3c-test.org/media-source/mediasource-is-type-supported.html
+
+    const containers = document.querySelectorAll('.container');
+    const codes = [...containers].map(c => c.querySelector('code'));
+    const videos = [...containers].map(c => c.querySelector('video'));
+
+    const options = [
+      {
+        video: videos[0],
+        chunkDuration: 60,
+        mimeCodec: 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"',
+        urls: Array.from({length: 11}, (v, i) => {
+          const url = {};
+          ['low'].map((level) => {
+            url[level] = `assets/video${i}.mp4`
+          });
+          return url
+        }),
+
+        quality: 'low',
+      },
+
+      {
+        video: videos[1],
+        chunkDuration: 30,
+        mimeCodec: 'video/webm; codecs="vp9"',
+
+        urls: Array.from({length: 6}, (v, i) => {
+          const url = {};
+          ['low', 'high'].map((level) => {
+            url[level] = `assets/bunny-${level}-${i}.webm`
+          });
+          return url
+        }),
+
+        quality: 'low',
+      },
+    ];
+
+    const streams = options.map((params) => new Streamer(params));
+
+    codes.forEach((code, index) => {
+      code.innerText = JSON.stringify(options[index], null, '\t');
+    });
+
+    containers.forEach((container, index) => {
+      container.querySelectorAll('input').forEach((input) => {
+        input.addEventListener('change', () => {
+          streams[index].setQuality(input.value);
+        });
+      })
+    })
+  </script>
+</body>
+</html>

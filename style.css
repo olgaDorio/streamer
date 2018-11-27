@@ -1,0 +1,31 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  display: grid;
+  grid-row-gap: 20px;
+  align-items: center;
+  width:  100vw;
+  overflow: hidden auto;
+}
+
+.container {
+  width: 100%;
+  display: flex;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.container__video {
+  width: 50%;
+  background: grey;
+}
+
+.container__code {
+  width: 50%;
+  background: black;
+  color: #eee;
+  white-space: pre-wrap;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
