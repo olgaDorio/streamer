@@ -13,6 +13,7 @@
       LOW
       <input type="radio" name="quality0" value="low" checked>
     </label>
+    <button>Destroy</button>
     <code class="container__code"></code>
   </div>
 
@@ -26,6 +27,7 @@
       HIGH
       <input type="radio" name="quality1" value="high">
     </label>
+    <button>Destroy</button>
     <code class="container__code"></code>
   </div>
 
@@ -35,6 +37,7 @@
     const containers = document.querySelectorAll('.container');
     const codes = [...containers].map(c => c.querySelector('code'));
     const videos = [...containers].map(c => c.querySelector('video'));
+    const buttons = [...containers].map(c => c.querySelector('button'));
 
     const options = [
       {
@@ -71,9 +74,20 @@
 
     const streams = options.map((params) => new Streamer(params));
 
+    streams.forEach((stream) => {
+      stream.create();
+    });
+
     codes.forEach((code, index) => {
       code.innerText = JSON.stringify(options[index], null, '\t');
     });
+
+    buttons.forEach((button, index) => {
+      button.addEventListener('click', () => {
+        videos[index].remove();
+        streams[index].destroy();
+      })
+    })
 
     containers.forEach((container, index) => {
       container.querySelectorAll('input').forEach((input) => {

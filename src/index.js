@@ -32,12 +32,15 @@ class Streamer {
     this.loadQueue = getLoadQueue(this.urls);
     this.duration = options.totalDuration || this.loadQueue.length * this.chunkDuration;
 
-    this.connect();
+    this.create();
 
     this.isFetching = false;
+    this.isDestroyed = true;
   }
 
-  connect() {
+  create() {
+    this.isDestroyed = false;
+
     const MSE = getMediaSource();
 
     if (!MSE) {
@@ -53,6 +56,11 @@ class Streamer {
     this.mediaSource = new MSE();
     this.video.src = URL.createObjectURL(this.mediaSource);
     this.mediaSource.addEventListener('sourceopen', this.onSourceOpen.bind(this));
+  }
+
+  destroy() {
+    this.isDestroyed = true;
+    this.loadQueue = [];
   }
 
   onSourceOpen() {
@@ -91,7 +99,7 @@ class Streamer {
   }
 
   onBufferReceive() {
-    if (this.isEverythingLoaded()) {
+    if (this.isEverythingLoaded() || this.isDestroyed) {
       return;
     }
 
@@ -133,6 +141,10 @@ class Streamer {
   }
 
   getVideo(index) {
+    if (this.isDestroyed) {
+      return;
+    }
+
     this.isFetching = true;
 
     getArrayBuffer(this.loadQueue[index][this.quality].url)
@@ -147,6 +159,10 @@ class Streamer {
   }
 
   appendBuffer() {
+    if (this.isDestroyed) {
+      return;
+    }
+
     const index = this.loadQueue.findIndex((source) => {
       const currentSource = source[this.quality];
       return currentSource.loaded && !currentSource.pushed;

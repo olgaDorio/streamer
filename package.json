@@ -26,7 +26,7 @@
   },
   "lint-staged": {
     "src/*.js": [
-      "npm run build",
+      "node_modules/.bin/eslint src/*.js --fix",
       "git add"
     ]
   }
