@@ -1,6 +1,6 @@
 import { getLoadQueue, updateLoadQueue } from './mappers.js';
 import {
-  getMediaSource, isTypeSupported, checkOptions, checkQuality, getArrayBuffer, getDuration,
+  getMediaSource, isTypeSupported, checkOptions, checkQuality, getArrayBuffer, getDuration, calcSum,
 } from './utils.js';
 
 /**
@@ -9,7 +9,6 @@ import {
  * @namespace
  * @property {object}           options               - Streamer options.
 
- * @property {number}           options.chunkDuration - Duration of one chunk.
  * @property {string}           options.mimeCodec     - mimetype and codec
  * @property {array}            options.urls          - array of urls
  * @property {HTMLVideoElement} options.video         - The default number of players.
@@ -18,19 +17,20 @@ import {
  */
 
 class Streamer {
-  constructor(options) {
+  constructor(options, callback) {
     if (!checkOptions(options)) {
       console.error('Invalid Configuration');
       return;
     }
 
-    this.chunkDuration = options.chunkDuration;
     this.mimeCodec = options.mimeCodec;
     this.urls = options.urls;
     this.video = options.video;
     this.quality = options.quality;
     this.loadQueue = getLoadQueue(this.urls);
-    this.duration = options.totalDuration || this.loadQueue.length * this.chunkDuration;
+    this.duration = options.totalDuration || calcSum(this.urls.map(o => o.chunkDuration));
+
+    this.callback = callback;
 
     this.create();
 
@@ -51,6 +51,14 @@ class Streamer {
     if (!isTypeSupported(this.mimeCodec)) {
       console.error('Unsupported MIME type or codec: ', this.mimeCodec);
       return;
+    }
+
+    if (this.callback) {
+      this.video.addEventListener('timeupdate', () => {
+        const index = this.getCurrentChunk();
+        if (index < 0) return;
+        this.callback(index);
+      });
     }
 
     this.mediaSource = new MSE();
@@ -95,7 +103,14 @@ class Streamer {
   }
 
   getCurrentChunk() {
-    return Math.floor(this.video.currentTime / this.chunkDuration);
+    const chunkDurations = this.urls.map(u => u.chunkDuration);
+    const { currentTime } = this.video;
+
+    return chunkDurations.findIndex((v, index) => {
+      const valueCurrent = calcSum(chunkDurations.slice(0, index));
+      const valueAfter = calcSum(chunkDurations.slice(0, index + 1));
+      return currentTime < valueAfter && currentTime >= valueCurrent;
+    });
   }
 
   onBufferReceive() {
@@ -116,18 +131,7 @@ class Streamer {
       return;
     }
 
-    // TODO: move to separate function
-
-    const notLoaded = this.loadQueue.reduce((accumulator, currentValue, index) => {
-      if (!this.isChunkLoaded(index)) {
-        const object = { ...accumulator };
-        const property = index < currIndex ? 'before' : 'after';
-        object[property] = object[property].concat(index);
-        return object;
-      }
-
-      return accumulator;
-    }, { before: [], after: [] });
+    const notLoaded = this.getNotLoadedChunks(currIndex);
 
     if (!notLoaded.after.length && !notLoaded.before.length) {
       return;
@@ -192,6 +196,19 @@ class Streamer {
 
   isChunkLoaded(index) {
     return this.loadQueue[index][this.quality].loaded;
+  }
+
+  getNotLoadedChunks(currIndex) {
+    return this.loadQueue.reduce((accumulator, currentValue, index) => {
+      if (!this.isChunkLoaded(index)) {
+        const object = { ...accumulator };
+        const property = index < currIndex ? 'before' : 'after';
+        object[property] = object[property].concat(index);
+        return object;
+      }
+
+      return accumulator;
+    }, { before: [], after: [] });
   }
 
   updateQueue(mediaBuffer, index) {

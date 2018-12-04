@@ -6,10 +6,9 @@ const getMediaSource = () => {
 const isTypeSupported = mimeCodec => getMediaSource().isTypeSupported(mimeCodec);
 
 const checkOptions = ({
-  chunkDuration, mimeCodec, urls, video, totalDuration, quality,
+  mimeCodec, urls, video, totalDuration, quality,
 }) => (
-  (chunkDuration && typeof chunkDuration === 'number')
-    && (mimeCodec && typeof mimeCodec === 'string')
+  (mimeCodec && typeof mimeCodec === 'string')
     && (urls && urls.length)
     && (video && video.tagName === 'VIDEO')
     && (typeof totalDuration === 'number' || typeof totalDuration === 'undefined')
@@ -37,6 +36,11 @@ const getDuration = file => new Promise((resolve) => {
 
   media.src = url;
 });
+
+const calcSum = array => (
+  array.reduce((a, b) => a + b, 0)
+);
+
 module.exports = {
   getMediaSource,
   isTypeSupported,
@@ -44,4 +48,5 @@ module.exports = {
   checkQuality,
   getArrayBuffer,
   getDuration,
+  calcSum,
 };

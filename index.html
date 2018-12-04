@@ -8,6 +8,7 @@
 </head>
 <body>
   <div class="container">
+    <h4></h4>
     <video class="container__video" src="" controls autoplay></video>
     <label>
       LOW
@@ -18,6 +19,7 @@
   </div>
 
   <div class="container">
+    <h4></h4>
     <video class="container__video" src="" controls autoplay></video>
     <label>
       LOW
@@ -42,10 +44,11 @@
     const options = [
       {
         video: videos[0],
-        chunkDuration: 60,
         mimeCodec: 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"',
         urls: Array.from({length: 11}, (v, i) => {
-          const url = {};
+          const url = {
+            chunkDuration: 60,
+          };
           ['low'].map((level) => {
             url[level] = `assets/video${i}.mp4`
           });
@@ -57,11 +60,11 @@
 
       {
         video: videos[1],
-        chunkDuration: 30,
         mimeCodec: 'video/webm; codecs="vp9"',
-
         urls: Array.from({length: 6}, (v, i) => {
-          const url = {};
+          const url = {
+            chunkDuration: 30,
+          };
           ['low', 'high'].map((level) => {
             url[level] = `assets/bunny-${level}-${i}.webm`
           });
@@ -72,7 +75,12 @@
       },
     ];
 
-    const streams = options.map((params) => new Streamer(params));
+    const streams = options.map((params, index) => {
+      const callback = (index) => {
+        params.video.previousElementSibling.innerHTML = JSON.stringify(params.urls[index])
+      }
+      return new Streamer(params, callback);
+    });
 
     streams.forEach((stream) => {
       stream.create();
